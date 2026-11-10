@@ -1,0 +1,19 @@
+{
+"manifest_version": 3,
+"name": "Paste",
+"description": "Store and Retrieve Texts with Ease! Save and access addresses, bank account numbers, IDs, and more effortlessly.",
+"version": "0.0.0.1",
+"icons": {
+"128": "128.png"
+},
+"action": {
+    "default_icon": {              
+      "32": "128.png"    
+    },
+    "default_title": "Click Me",   
+    "default_popup": "paste.html"  
+},
+"permissions": [
+    "unlimitedStorage"
+  ]
+}
