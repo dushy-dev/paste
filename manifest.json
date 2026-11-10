@@ -2,7 +2,7 @@
 "manifest_version": 3,
 "name": "Paste",
 "description": "Store and Retrieve Texts with Ease! Save and access addresses, bank account numbers, IDs, and more effortlessly.",
-"version": "0.0.0.2",
+"version": "0.0.0.4",
 "icons": {
 "128": "128.png"
 },
