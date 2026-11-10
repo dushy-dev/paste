@@ -2,7 +2,7 @@
 //
 // Data is kept in chrome.storage.local (persists across browser restarts and
 // is NOT wiped when the user clears browsing/site data, unlike localStorage).
-// Shape: { entries: [{ id: string, name: string, value: string }, ...] }
+// Shape: { entries: [{ id: string, name: string, value: string, hidden: boolean }, ...] }
 
 const STORAGE_KEY = "entries";
 const LEGACY_LOCALSTORAGE_KEY = "textboxState"; // used by v0.0.0.1
@@ -68,6 +68,7 @@ async function migrateLegacyData() {
       id: newId(),
       name: String(pair[0] ?? ""),
       value: String(pair[1] ?? ""),
+      hidden: false,
     }));
 
   await storageSet(STORAGE_KEY, migrated);
@@ -83,6 +84,7 @@ async function loadEntries() {
       id: e.id || newId(),
       name: String(e.name ?? ""),
       value: String(e.value ?? ""),
+      hidden: Boolean(e.hidden),
     }));
   }
   try {
@@ -113,6 +115,21 @@ function updateDescription() {
   if (desc) desc.style.display = entries.length ? "none" : "";
 }
 
+const EYE_OPEN =
+  '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_CLOSED =
+  '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+// Apply the hidden/visible state to a row's value input and eye button.
+function applyHidden(entry, valueInput, eyeBtn) {
+  valueInput.type = entry.hidden ? "password" : "text";
+  eyeBtn.innerHTML = entry.hidden ? EYE_CLOSED : EYE_OPEN; // static markup only
+  const label = entry.hidden ? "Show value" : "Hide value";
+  eyeBtn.title = label;
+  eyeBtn.setAttribute("aria-label", label);
+  eyeBtn.setAttribute("aria-pressed", String(entry.hidden));
+}
+
 function createRow(entry) {
   const row = document.createElement("div");
   row.className = "row";
@@ -127,6 +144,11 @@ function createRow(entry) {
   valueInput.type = "text";
   valueInput.placeholder = "Value";
   valueInput.value = entry.value;
+
+  const eyeBtn = document.createElement("button");
+  eyeBtn.type = "button";
+  eyeBtn.className = "eye-button";
+  applyHidden(entry, valueInput, eyeBtn);
 
   const copyBtn = document.createElement("button");
   copyBtn.type = "button";
@@ -146,15 +168,20 @@ function createRow(entry) {
     entry.value = valueInput.value;
     scheduleSave();
   });
+  eyeBtn.addEventListener("click", () => {
+    entry.hidden = !entry.hidden;
+    applyHidden(entry, valueInput, eyeBtn);
+    saveNow();
+  });
   copyBtn.addEventListener("click", () => copyText(valueInput, copyBtn));
   delBtn.addEventListener("click", () => deleteRow(entry.id, row));
 
-  row.append(nameInput, valueInput, copyBtn, delBtn);
+  row.append(nameInput, valueInput, eyeBtn, copyBtn, delBtn);
   return row;
 }
 
 function addRow() {
-  const entry = { id: newId(), name: "", value: "" };
+  const entry = { id: newId(), name: "", value: "", hidden: false };
   entries.push(entry);
   const row = createRow(entry);
   document.getElementById("container").appendChild(row);
